@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>格子物理ラボ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+body{margin:0;} img{max-width:100%;} [hidden]{display:none!important;}
+
+  :root{
+    --bg:#EEF2F7; --surface:#FFFFFF; --surface-2:#E3EAF2;
+    --ink:#16223A; --ink-soft:#51607A; --line:#C9D5E3;
+    --teal:#0C7D74; --teal-soft:#E3F3F1;
+    --ember:#C94510; --ember-soft:#FBEBE2;
+    --code-bg:#16223A; --code-ink:#DCE6F0;
+    --accent:var(--teal);
+    --radius:12px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F1620; --surface:#16202E; --surface-2:#1C2836;
+      --ink:#E7EDF5; --ink-soft:#9FB0C4; --line:#2A3A4E;
+      --teal:#35B8AA; --teal-soft:#12302C;
+      --ember:#F0763B; --ember-soft:#3A2013;
+      --code-bg:#0A1119; --code-ink:#DCE6F0;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1620; --surface:#16202E; --surface-2:#1C2836;
+    --ink:#E7EDF5; --ink-soft:#9FB0C4; --line:#2A3A4E;
+    --teal:#35B8AA; --teal-soft:#12302C;
+    --ember:#F0763B; --ember-soft:#3A2013;
+    --code-bg:#0A1119; --code-ink:#DCE6F0;
+    color-scheme:dark;
+  }
+  body.page-exchange{--accent:var(--ember);}
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    line-height:1.7; padding-inline:20px;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  a{color:var(--accent);}
+  h1,h2,h3{text-wrap:balance; font-family:"IBM Plex Sans",sans-serif; font-weight:700; margin:0;}
+  p{margin:0;}
+  .wrap{max-width:880px; margin-inline:auto;}
+  .prose{max-width:66ch;}
+
+  .navbar{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    margin-inline:-20px; padding-inline:20px;
+  }
+  .navbar-inner{
+    max-width:880px; margin-inline:auto; display:flex; align-items:center; gap:20px;
+    overflow-x:auto; padding-block:12px; scrollbar-width:thin;
+  }
+  .navbar-brand{
+    font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:0.85rem; letter-spacing:0.02em;
+    white-space:nowrap; color:var(--ink); text-decoration:none;
+  }
+  .navbar-links{display:flex; gap:16px; white-space:nowrap;}
+  .navbar-links a{
+    color:var(--ink-soft); text-decoration:none; font-size:0.82rem; font-weight:500;
+    padding-block:2px; border-bottom:2px solid transparent;
+  }
+  .navbar-links a:hover{color:var(--ink);}
+  .navbar-links a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--link-accent, var(--teal));}
+  .navbar-links a.nav-walk{--link-accent:var(--teal);}
+  .navbar-links a.nav-exchange{--link-accent:var(--ember);}
+  .navbar-links a.nav-home{--link-accent:var(--ink-soft);}
+
+  .hero{
+    position:relative; padding-block:44px 40px; display:flex; gap:36px; align-items:center; flex-wrap:wrap;
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:28px 28px; background-position:center top;
+    -webkit-mask-image:linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image:linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+  .hero > *{position:relative; z-index:1;}
+  .hero-text{flex:1 1 360px; min-width:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:0.75rem; letter-spacing:0.09em;
+    text-transform:uppercase; color:var(--accent); font-weight:600;
+  }
+  .hero h1{font-size:clamp(1.6rem, 1.25rem + 1.6vw, 2.3rem); margin-block:10px 12px;}
+  .hero .lede{color:var(--ink-soft); max-width:52ch; font-size:1rem;}
+  .hero-canvas-box{
+    flex:0 0 auto; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:10px;
+  }
+  .hero-canvas-box canvas{display:block; border-radius:6px;}
+  .hero-canvas-caption{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; color:var(--ink-soft); text-align:center; margin-top:6px;}
+
+  .facts{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:1px; max-width:420px; background:var(--line);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-block:0 40px;
+  }
+  .fact{background:var(--surface); padding:14px 12px;}
+  .fact-label{font-size:0.72rem; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace; letter-spacing:0.03em;}
+  .fact-value{font-weight:600; margin-top:4px; font-size:0.95rem;}
+  @media (max-width:640px){ .facts{grid-template-columns:repeat(2,1fr);} }
+
+  section{padding-block:40px; border-top:1px solid var(--line);}
+  section.first{border-top:none;}
+  .section-head{margin-bottom:22px;}
+  .section-num{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-soft);}
+  .section-head h2{font-size:clamp(1.25rem, 1.1rem + 0.5vw, 1.55rem); margin-top:4px;}
+
+  .topic-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:680px){ .topic-grid{grid-template-columns:1fr;} }
+  .topic-card{
+    display:flex; flex-direction:column;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; border-top:4px solid var(--card-accent, var(--teal));
+    color:var(--ink); text-decoration:none;
+  }
+  a.topic-card:hover{border-color:var(--card-accent);}
+  a.topic-card:focus-visible, .pager a:focus-visible, .navbar a:focus-visible, summary:focus-visible, .copy-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .topic-card.walk{--card-accent:var(--teal); --tagbg:var(--teal-soft);}
+  .topic-card.exchange{--card-accent:var(--ember); --tagbg:var(--ember-soft);}
+  .topic-card-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .topic-tag{
+    font-family:"IBM Plex Mono",monospace; font-size:0.7rem; padding:3px 8px; border-radius:999px;
+    background:var(--tagbg); color:var(--card-accent); font-weight:600; white-space:nowrap;
+  }
+  .topic-card h3{font-size:1.05rem;}
+  .topic-card p{color:var(--ink-soft); font-size:0.92rem; margin-top:10px;}
+  .topic-cta{margin-top:auto; padding-top:16px; font-family:"IBM Plex Mono",monospace; font-size:0.8rem; font-weight:600; color:var(--card-accent);}
+  .topic-diagram{margin-top:14px;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+  .stack{display:flex; flex-direction:column; gap:14px;}
+  ul.plain, ol.plain{margin:0; padding-left:1.15em;}
+  ul.plain li, ol.plain li{margin-block:6px;}
+  ol.steps{margin:0; padding-left:1.3em;}
+  ol.steps li{margin-block:6px;}
+
+  .principle-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;}
+  @media (max-width:680px){ .principle-grid{grid-template-columns:1fr;} }
+  .principle{background:var(--surface-2); border-radius:var(--radius); padding:16px;}
+  .principle p{margin-top:8px; font-size:0.9rem; color:var(--ink-soft);}
+
+  .session{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .session-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:18px 22px; background:var(--surface-2); border-bottom:1px solid var(--line);
+  }
+  .session-head-left{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  .session-kicker{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-soft);}
+  .session-head h3{font-size:1.15rem;}
+  .session-duration{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; font-weight:600; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 10px;}
+  .session-body{padding:22px;}
+  .session-goal{color:var(--ink-soft); font-size:0.93rem; max-width:62ch; margin-bottom:20px;}
+
+  table.schedule{width:100%; border-collapse:collapse; font-size:0.88rem;}
+  table.schedule th, table.schedule td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.schedule th{color:var(--ink-soft); font-weight:600; font-size:0.75rem; letter-spacing:0.04em;}
+  table.schedule td.time{font-family:"IBM Plex Mono",monospace; white-space:nowrap; color:var(--ink-soft); width:6.5em;}
+  table.nums td.num, table.nums th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace;}
+  .table-scroll{overflow-x:auto;}
+
+  .subhead{
+    font-family:"IBM Plex Mono",monospace; font-size:0.78rem; font-weight:600; color:var(--ink-soft);
+    letter-spacing:0.05em; margin:28px 0 10px;
+  }
+  .subhead:first-child{margin-top:0;}
+  .note{font-size:0.85rem; color:var(--ink-soft); margin-top:10px; max-width:66ch;}
+
+  .prompt-block{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:16px; margin-top:4px;}
+  .prompt-block pre{
+    margin:0; white-space:pre-wrap; word-break:break-word; font-family:"IBM Plex Mono",monospace;
+    font-size:0.82rem; line-height:1.65; color:var(--ink); padding-right:64px;
+  }
+  .copy-btn{
+    position:absolute; top:10px; right:10px; font-family:"IBM Plex Mono",monospace; font-size:0.7rem; font-weight:600;
+    background:var(--surface); color:var(--ink-soft); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer;
+  }
+  .copy-btn:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .copy-btn[data-state="done"]{color:var(--accent); border-color:var(--accent);}
+
+  .checklist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .checklist li{display:flex; align-items:flex-start; gap:10px; background:var(--surface-2); border-radius:8px; padding:10px 12px;}
+  .checklist input[type="checkbox"]{margin-top:4px; width:16px; height:16px; accent-color:var(--accent); flex:0 0 auto;}
+  .checklist label{font-size:0.9rem; flex:1;}
+  .chip{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; font-weight:600; padding:2px 7px; border-radius:5px; white-space:nowrap; margin-right:8px;}
+  .chip.hand{background:var(--teal-soft); color:var(--teal);}
+  .chip.ai{background:var(--ember-soft); color:var(--ember);}
+  .chip.rec{background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line);}
+  .principle .chip{margin-right:0;}
+
+  .viz-steps{background:var(--surface-2); border-radius:8px; padding:16px 16px 16px 34px; margin-top:6px;}
+
+  .extend-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px;}
+  @media (max-width:680px){ .extend-grid{grid-template-columns:1fr;} }
+  .extend-item{background:var(--surface-2); border-radius:8px; padding:13px 14px; font-size:0.9rem; border-left:3px solid var(--line);}
+  .extend-item b{display:block; font-size:0.88rem; margin-bottom:4px;}
+
+  details.refcode{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  details.refcode summary{
+    cursor:pointer; padding:16px 20px; font-weight:600; list-style:none; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; background:var(--surface-2);
+  }
+  details.refcode summary::-webkit-details-marker{display:none;}
+  details.refcode summary::after{content:"開く"; font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-soft); font-weight:500;}
+  details.refcode[open] summary::after{content:"閉じる";}
+  .refcode-body{padding:18px 20px 22px;}
+  .refcode-body pre{
+    margin:0; background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:16px; overflow-x:auto;
+    font-family:"IBM Plex Mono",monospace; font-size:0.78rem; line-height:1.6;
+  }
+
+  .callout{
+    background:var(--ember-soft); border:1px solid color-mix(in srgb, var(--ember) 35%, var(--line));
+    border-radius:var(--radius); padding:16px 18px; font-size:0.9rem; max-width:72ch;
+  }
+  .callout b{color:var(--ember);}
+  .callout.teal{background:var(--teal-soft); border-color:color-mix(in srgb, var(--teal) 35%, var(--line));}
+  .callout.teal b{color:var(--teal);}
+
+  .pager{display:grid; grid-template-columns:1fr 1fr; gap:14px; padding-block:36px 8px; border-top:1px solid var(--line);}
+  @media (max-width:560px){ .pager{grid-template-columns:1fr;} }
+  .pager a{
+    display:block; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; text-decoration:none; color:var(--ink);
+  }
+  .pager a:hover{border-color:var(--ink-soft);}
+  .pager .dir{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-soft);}
+  .pager .ttl{font-weight:600; margin-top:2px;}
+  .pager a.next{text-align:right;}
+  .pager a.only-next{grid-column:2;}
+  @media (max-width:560px){ .pager a.only-next{grid-column:1;} }
+
+  footer{padding-block:28px 60px; color:var(--ink-soft); font-size:0.82rem;}
+</style>
+</head>
+<body class="page-home">
+<div class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="#overview">格子物理ラボ</a>
+<nav class="navbar-links">
+<a class="nav-home" href="#overview" aria-current="page">ホーム</a>
+<a class="nav-walk" href="walk.html">テーマA 格子ランダムウォーク</a>
+<a class="nav-exchange" href="exchange.html">テーマB 隣接交換モデル</a>
+<a class="nav-home" href="#session3">3コマ目</a>
+<a class="nav-home" href="#report">レポート</a>
+</nav></div></div>
+<div class="wrap">
+
+  <div class="hero" id="overview">
+    <div class="hero-text">
+      <div class="eyebrow">LLM入門 実験授業 &middot; 全3コマ 進行ガイド</div>
+      <h1>生成AIとつくる格子シミュレーション</h1>
+      <p class="lede">2人1組でC言語のプログラムを生成AIと一緒に書き、2次元格子の上で起こる拡散・熱伝導・統計法則を、手を動かしながら体感する。</p>
+    </div>
+    <div class="hero-canvas-box">
+      <canvas id="demoCanvas" data-demo="walk" width="220" height="220"></canvas>
+      <div class="hero-canvas-caption">格子ランダムウォークのミニ実演</div>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><div class="fact-label">対象</div><div class="fact-value">高専2年生</div></div>
+    <div class="fact"><div class="fact-label">時間</div><div class="fact-value">90分 &times; 3コマ</div></div>
+  </div>
+
+  <section class="first">
+    <div class="section-head">
+      <div class="section-num">ねらい</div>
+      <h2>この授業でやること</h2>
+    </div>
+    <div class="stack">
+      <p class="prose">生成AIに指示を出してC言語のプログラムを書かせ、2次元格子の上で起こる拡散と熱の伝わり方をシミュレーションする。AIに指示を出し、出てきた結果を確かめ、自分の手やさらなる指示で発展させる。このサイクルを3コマの中で何度も回し、最後に結果をレポートにまとめる。AIが書いたコードは、AIのチャット画面上ではなく、手元のPCでコンパイルして実行する。</p>
+      <p class="prose">扱うのは「毎ステップ、ランダムに動く・分け合う」という単純な規則だけで、物理の前提知識は1次元運動までで足りる。この規則を何万回も繰り返すと、拡散やボルツマン分布といったマクロな現象が現れる。それをヒートマップと、値ごとのマスの数を数えた棒グラフ（ヒストグラム）で確かめる。</p>
+    </div>
+  </section>
+
+  <section id="topics">
+    <div class="section-head">
+      <div class="section-num">題材</div>
+      <h2>2つのテーマ</h2>
+    </div>
+    <div class="topic-grid">
+      <a class="topic-card walk" href="walk.html">
+        <div class="topic-card-head"><span class="topic-tag">テーマA &middot; 1コマ目</span><h3>格子ランダムウォーク</h3></div>
+        <svg class="topic-diagram" width="100%" height="110" viewBox="0 0 220 110" role="img" aria-label="粒子が格子のマスの中にいて、上下左右の隣のマスへ動く様子">
+          <g fill="var(--teal)" opacity="0.14">
+            <rect x="80" y="10" width="30" height="30"/><rect x="80" y="70" width="30" height="30"/>
+            <rect x="50" y="40" width="30" height="30"/><rect x="110" y="40" width="30" height="30"/>
+          </g>
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="20" y1="10" x2="20" y2="100"/><line x1="50" y1="10" x2="50" y2="100"/>
+            <line x1="80" y1="10" x2="80" y2="100"/><line x1="110" y1="10" x2="110" y2="100"/>
+            <line x1="140" y1="10" x2="140" y2="100"/><line x1="170" y1="10" x2="170" y2="100"/>
+            <line x1="20" y1="10" x2="170" y2="10"/><line x1="20" y1="40" x2="170" y2="40"/>
+            <line x1="20" y1="70" x2="170" y2="70"/><line x1="20" y1="100" x2="170" y2="100"/>
+          </g>
+          <circle cx="95" cy="55" r="6" fill="var(--teal)"/>
+          <g stroke="var(--teal)" stroke-width="1.6" fill="none">
+            <path d="M95 47 L95 27" marker-end="url(#arrowTeal)"/>
+            <path d="M95 63 L95 83" marker-end="url(#arrowTeal)"/>
+            <path d="M87 55 L67 55" marker-end="url(#arrowTeal)"/>
+            <path d="M103 55 L123 55" marker-end="url(#arrowTeal)"/>
+          </g>
+          <defs><marker id="arrowTeal" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--teal)"/></marker></defs>
+        </svg>
+        <p>粒子は中心のマスから出発し、毎ステップ上下左右のどれかへランダムに1マス動く。多数の粒子を走らせると、1点から広がっていく様子が現れる。拡散・熱伝導のミクロなイメージになる。</p>
+        <div class="topic-cta">ページを開く &rarr;</div>
+      </a>
+      <a class="topic-card exchange" href="exchange.html">
+        <div class="topic-card-head"><span class="topic-tag">テーマB &middot; 2コマ目</span><h3>隣接交換モデル</h3></div>
+        <svg class="topic-diagram" width="100%" height="90" viewBox="0 0 220 90" role="img" aria-label="隣り合う2マスがエネルギーを分け合う様子">
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="20" y1="15" x2="20" y2="75"/><line x1="50" y1="15" x2="50" y2="75"/>
+            <line x1="80" y1="15" x2="80" y2="75"/><line x1="110" y1="15" x2="110" y2="75"/>
+            <line x1="140" y1="15" x2="140" y2="75"/><line x1="170" y1="15" x2="170" y2="75"/>
+            <line x1="10" y1="15" x2="180" y2="15"/><line x1="10" y1="45" x2="180" y2="45"/><line x1="10" y1="75" x2="180" y2="75"/>
+          </g>
+          <rect x="80" y="15" width="30" height="30" fill="var(--ember)" opacity="0.85"/>
+          <rect x="110" y="15" width="30" height="30" fill="var(--ember)" opacity="0.25"/>
+          <text x="95" y="35" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="#fff">8</text>
+          <text x="125" y="35" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--ink)">2</text>
+          <text x="110" y="62" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--ink-soft)">合計10を分け直す</text>
+        </svg>
+        <p>マスは動かず、各マスが持つ「エネルギー」を、隣り合う2マスの間で分け合う。空間的にはエネルギーが広がる様子（熱伝導）が、各マスの値の分布としてはボルツマン分布が、同時に観察できる。</p>
+        <div class="topic-cta">ページを開く &rarr;</div>
+      </a>
+    </div>
+  </section>
+
+  <section id="principles">
+    <div class="section-head">
+      <div class="section-num">進め方</div>
+      <h2>AIとの協働の原則</h2>
+    </div>
+    <p class="prose">各コマでは、次の2種類の作業を必ず行う。</p>
+    <div class="principle-grid">
+      <div class="principle">
+        <span class="chip hand">手作業チャレンジ</span>
+        <p>できたコードの一部を、自分たちの手で直接編集する。パラメータを変えるだけの簡単なものから、条件式を書き換えるものまである。コードの中身を読んで理解しているかが問われる。</p>
+      </div>
+      <div class="principle">
+        <span class="chip ai">AI指示チャレンジ</span>
+        <p>新しい機能を、AIへの追加のプロンプトによって実装してもらう。やりたいことを、AIが実装できる形で具体的に言葉にできるかが問われる。</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px;">
+      <b>AIが難しく書きすぎたときは：</b> 放っておくとAIは、授業で扱っていない高度な書き方を使ってくることがある。そのときは「このコードは今の知識では理解できないので、もっと簡単な書き方にしてください」のように頼み直す。どこまで簡単にしたいかを具体的に伝えるほど、出力は安定する。これもAIとの付き合い方の練習として位置づける。
+    </div>
+    <div class="callout teal" style="margin-top:14px;">
+      <b>結果は必ず確かめる：</b> AIが書いたコードが動いたことと、正しいことは別である。粒子の総数やエネルギーの総和が変わっていないかなど、保存されるはずの量を出力させて確かめる習慣を、両テーマを通して身につける。
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="section-head">
+      <div class="section-num">全体の流れ</div>
+      <h2>3コマの構成</h2>
+    </div>
+    <ul class="plain">
+      <li><b>1コマ目:</b> 格子ランダムウォークを作り、粒子が広がる様子をヒートマップで見る。<a href="walk.html">テーマAのページ</a></li>
+      <li><b>2コマ目:</b> 1コマ目のコードをAIへの追加指示で書き換え、エネルギーを分け合うモデルへ発展させる。<a href="exchange.html">テーマBのページ</a></li>
+      <li><b>3コマ目:</b> 2つのモデルを土台にした自由発展と、レポートの執筆。<a href="#session3">このページの下</a></li>
+    </ul>
+  </section>
+
+  <section id="session3">
+    <div class="session">
+      <div class="session-head">
+        <div class="session-head-left">
+          <span class="session-kicker">3コマ目</span>
+          <h3>自由発展とレポート</h3>
+        </div>
+        <span class="session-duration">90分</span>
+      </div>
+      <div class="session-body">
+        <p class="session-goal">ここまでの2つのモデルを土台に、各ペアが自分たちで発展方向を選んで仕上げ、結果をレポートにまとめる。</p>
+
+        <div class="subhead">進め方</div>
+        <ul class="plain">
+          <li><b>発展メニューの紹介:</b> ペアごとにやりたい方向を1つ選ぶ。</li>
+          <li><b>自由発展の実装:</b> 手作業とAI指示の両方を使って進め、結果をグラフにする。</li>
+          <li><b>レポートの執筆:</b> 下の構成に沿って、3コマ分の記録を整理する。</li>
+        </ul>
+
+        <div class="subhead">発展メニュー</div>
+        <div class="extend-grid">
+          <div class="extend-item"><b>温度差をつけた定常状態</b>格子の左端の列を高いエネルギーに、右端の列を0に固定し続け、エネルギーが流れる定常状態を観察する（テーマB）。</div>
+          <div class="extend-item"><b>障害物</b>粒子やエネルギーが通れないマスを置き、回り込む様子を見る（テーマA・B）。</div>
+          <div class="extend-item"><b>広がりの定量化</b>粒子の中心からの距離の2乗平均が、ステップ数に対してどう増えるかをグラフにする（テーマA）。</div>
+          <div class="extend-item"><b>格子サイズと平衡までの時間</b>格子を小さくすると、分布が落ち着くまでの回数がどう変わるかを調べる（テーマB）。</div>
+          <div class="extend-item"><b>ブラウザビューア</b>CSVをHTML/JavaScriptで読み込み、時間経過をアニメーション表示する。</div>
+          <div class="extend-item"><b>格子気体モデル</b>粒子が動きながら、同じマスに来たときだけエネルギーを分け合う。2つのテーマを合わせた、より本物の気体に近いモデルに挑戦する。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="report">
+    <div class="section-head">
+      <div class="section-num">レポート</div>
+      <h2>レポートにまとめる</h2>
+    </div>
+    <p class="prose" style="margin-bottom:14px;">3コマの内容を、ペアで1本のレポートにまとめる。各コマの終わりに、その日の分の記録（AIに出した指示、グラフ、気づいたこと）を残しておくと書きやすい。</p>
+    <div class="card">
+      <ol class="plain" style="padding-left:1.2em;">
+        <li><b>予想:</b> 実行する前に、結果がどうなると考えたか。</li>
+        <li><b>方法:</b> モデルのルール（粒子はどう動くか、エネルギーをどう分けるか）と、AIに出した指示の要点。</li>
+        <li><b>結果:</b> ヒートマップとヒストグラム。粒子数やエネルギーの総和が保存されていることの確認。</li>
+        <li><b>考察:</b> 拡散やボルツマン分布について分かったこと。予想と違った点。</li>
+        <li><b>AIとの協働:</b> 自分たちの手で直した部分と、AIへの追加指示で発展させた部分。AIの出力をどう確かめたか。AIが難しく書いてきたり、うまくいかなかったりしたときの対処。</li>
+        <li><b>発展課題:</b> 3コマ目に取り組んだ内容と、その結果。</li>
+      </ol>
+    </div>
+    <div class="subhead">評価観点</div>
+    <div class="card">
+      <ul class="plain">
+        <li>動くシミュレーションが完成し、予想・方法・結果・考察が筋道立てて書かれているか。</li>
+        <li>可視化した結果から、拡散やボルツマン分布を自分の言葉で説明できているか。</li>
+        <li>保存されるはずの量（粒子数、エネルギーの総和）を確かめるなど、AIの出力を検証しているか。</li>
+        <li>自分たちの手で直した部分と、AIへの指示で発展させた部分を、区別して説明できているか。</li>
+        <li>AIが難しく書いたときなど、うまくいかなかったときの対処が書かれているか。</li>
+        <li>3コマ目の発展課題に取り組めているか。</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>格子物理ラボ &middot; LLM入門 実験授業 進行ガイド &middot; 全3コマ（90分&times;3）<br>&copy; 2026 松岡亮</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  document.querySelectorAll('.checklist input[type="checkbox"]').forEach(function(box){
+    var key = "lattice-lab:" + box.id;
+    try { if (localStorage.getItem(key) === "1") box.checked = true; } catch (e) {}
+    box.addEventListener("change", function(){
+      try { localStorage.setItem(key, box.checked ? "1" : "0"); } catch (e) {}
+    });
+  });
+
+  function selectText(el){
+    try {
+      var range = document.createRange(); range.selectNodeContents(el);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    } catch (e) {}
+  }
+  document.querySelectorAll(".copy-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var el = document.getElementById(btn.getAttribute("data-copy-target"));
+      if (!el) return;
+      function fallback(){
+        selectText(el);
+        btn.textContent = "選択済み(Ctrl+C)";
+        setTimeout(function(){ btn.textContent = "コピー"; }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.textContent).then(function(){
+          btn.textContent = "コピー済み"; btn.dataset.state = "done";
+          setTimeout(function(){ btn.textContent = "コピー"; btn.dataset.state = ""; }, 1600);
+        }).catch(fallback);
+      } else { fallback(); }
+    });
+  });
+
+  var canvas = document.getElementById("demoCanvas");
+  if (!canvas || !canvas.getContext) return;
+  var kind = canvas.getAttribute("data-demo");
+  var ctx = canvas.getContext("2d");
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var css = 220;
+  canvas.width = css * dpr; canvas.height = css * dpr;
+  canvas.style.width = css + "px"; canvas.style.height = css + "px";
+  ctx.scale(dpr, dpr);
+  var G = 15, cell = css / G, c0 = Math.floor(G / 2);
+
+  function token(name, fallback){
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  function rgb(hex){
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function(c){ return c + c; }).join("");
+    var n = parseInt(hex, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function dirStep(i, j){
+    var d = Math.floor(Math.random() * 4);
+    if (d === 0 && i > 0) return [i - 1, j];
+    if (d === 1 && i < G - 1) return [i + 1, j];
+    if (d === 2 && j > 0) return [i, j - 1];
+    if (d === 3 && j < G - 1) return [i, j + 1];
+    return null;
+  }
+
+  var walk = { visits: null, dots: null, t: 0 };
+  var ex = { e: null, t: 0, total: 2250 };
+
+  function reset(){
+    var i;
+    if (kind === "walk") {
+      walk.visits = []; walk.dots = []; walk.t = 0;
+      for (i = 0; i < G; i++) walk.visits.push(new Array(G).fill(0));
+      for (i = 0; i < 7; i++) { walk.dots.push({ y: c0, x: c0 }); walk.visits[c0][c0]++; }
+    } else {
+      ex.e = []; ex.t = 0;
+      for (i = 0; i < G; i++) ex.e.push(new Array(G).fill(0));
+      ex.e[c0][c0] = ex.total;
+    }
+  }
+  function step(){
+    var k;
+    if (kind === "walk") {
+      walk.dots.forEach(function(d){
+        var n = dirStep(d.y, d.x);
+        if (n) { d.y = n[0]; d.x = n[1]; }
+        walk.visits[d.y][d.x]++;
+      });
+      walk.t++;
+      if (walk.t > 260) reset();
+    } else {
+      for (k = 0; k < 300; k++) {
+        var i = Math.floor(Math.random() * G), j = Math.floor(Math.random() * G);
+        var n = dirStep(i, j);
+        if (!n) continue;
+        var tot = ex.e[i][j] + ex.e[n[0]][n[1]];
+        var a = Math.floor(Math.random() * (tot + 1));
+        ex.e[i][j] = a; ex.e[n[0]][n[1]] = tot - a;
+      }
+      ex.t++;
+      if (ex.t > 170) reset();
+    }
+  }
+  function draw(){
+    ctx.fillStyle = token("--surface", "#FFFFFF");
+    ctx.fillRect(0, 0, css, css);
+    var i, j, a;
+    if (kind === "walk") {
+      var c = rgb(token("--teal", "#0C7D74")), mx = 1;
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) if (walk.visits[i][j] > mx) mx = walk.visits[i][j];
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) {
+        var v = walk.visits[i][j];
+        if (v > 0) {
+          a = Math.min(0.85, v / mx) * 0.75;
+          ctx.fillStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+          ctx.fillRect(j * cell, i * cell, cell - 1, cell - 1);
+        }
+      }
+      ctx.fillStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",0.95)";
+      walk.dots.forEach(function(d){
+        ctx.beginPath(); ctx.arc(d.x * cell + cell / 2, d.y * cell + cell / 2, cell * 0.28, 0, Math.PI * 2); ctx.fill();
+      });
+    } else {
+      var m = rgb(token("--ember", "#C94510")), mean = ex.total / (G * G);
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) {
+        a = Math.min(1, ex.e[i][j] / (mean * 4)) * 0.85;
+        if (a > 0.01) {
+          ctx.fillStyle = "rgba(" + m[0] + "," + m[1] + "," + m[2] + "," + a + ")";
+          ctx.fillRect(j * cell, i * cell, cell - 1, cell - 1);
+        }
+      }
+    }
+  }
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  reset();
+  if (reduce) {
+    var s, n = (kind === "walk") ? 180 : 40;
+    for (s = 0; s < n; s++) step();
+    draw();
+  } else {
+    draw();
+    setInterval(function(){ step(); draw(); }, 140);
+  }
+})();
+</script>
+</body>
+</html>

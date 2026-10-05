@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>テーマB 隣接交換モデル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+body{margin:0;} img{max-width:100%;} [hidden]{display:none!important;}
+
+  :root{
+    --bg:#EEF2F7; --surface:#FFFFFF; --surface-2:#E3EAF2;
+    --ink:#16223A; --ink-soft:#51607A; --line:#C9D5E3;
+    --teal:#0C7D74; --teal-soft:#E3F3F1;
+    --ember:#C94510; --ember-soft:#FBEBE2;
+    --code-bg:#16223A; --code-ink:#DCE6F0;
+    --accent:var(--teal);
+    --radius:12px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F1620; --surface:#16202E; --surface-2:#1C2836;
+      --ink:#E7EDF5; --ink-soft:#9FB0C4; --line:#2A3A4E;
+      --teal:#35B8AA; --teal-soft:#12302C;
+      --ember:#F0763B; --ember-soft:#3A2013;
+      --code-bg:#0A1119; --code-ink:#DCE6F0;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1620; --surface:#16202E; --surface-2:#1C2836;
+    --ink:#E7EDF5; --ink-soft:#9FB0C4; --line:#2A3A4E;
+    --teal:#35B8AA; --teal-soft:#12302C;
+    --ember:#F0763B; --ember-soft:#3A2013;
+    --code-bg:#0A1119; --code-ink:#DCE6F0;
+    color-scheme:dark;
+  }
+  body.page-exchange{--accent:var(--ember);}
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    line-height:1.7; padding-inline:20px;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+  a{color:var(--accent);}
+  h1,h2,h3{text-wrap:balance; font-family:"IBM Plex Sans",sans-serif; font-weight:700; margin:0;}
+  p{margin:0;}
+  .wrap{max-width:880px; margin-inline:auto;}
+  .prose{max-width:66ch;}
+
+  .navbar{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    margin-inline:-20px; padding-inline:20px;
+  }
+  .navbar-inner{
+    max-width:880px; margin-inline:auto; display:flex; align-items:center; gap:20px;
+    overflow-x:auto; padding-block:12px; scrollbar-width:thin;
+  }
+  .navbar-brand{
+    font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:0.85rem; letter-spacing:0.02em;
+    white-space:nowrap; color:var(--ink); text-decoration:none;
+  }
+  .navbar-links{display:flex; gap:16px; white-space:nowrap;}
+  .navbar-links a{
+    color:var(--ink-soft); text-decoration:none; font-size:0.82rem; font-weight:500;
+    padding-block:2px; border-bottom:2px solid transparent;
+  }
+  .navbar-links a:hover{color:var(--ink);}
+  .navbar-links a[aria-current="page"]{color:var(--ink); border-bottom-color:var(--link-accent, var(--teal));}
+  .navbar-links a.nav-walk{--link-accent:var(--teal);}
+  .navbar-links a.nav-exchange{--link-accent:var(--ember);}
+  .navbar-links a.nav-home{--link-accent:var(--ink-soft);}
+
+  .hero{
+    position:relative; padding-block:44px 40px; display:flex; gap:36px; align-items:center; flex-wrap:wrap;
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:28px 28px; background-position:center top;
+    -webkit-mask-image:linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image:linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+  .hero > *{position:relative; z-index:1;}
+  .hero-text{flex:1 1 360px; min-width:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:0.75rem; letter-spacing:0.09em;
+    text-transform:uppercase; color:var(--accent); font-weight:600;
+  }
+  .hero h1{font-size:clamp(1.6rem, 1.25rem + 1.6vw, 2.3rem); margin-block:10px 12px;}
+  .hero .lede{color:var(--ink-soft); max-width:52ch; font-size:1rem;}
+  .hero-canvas-box{
+    flex:0 0 auto; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:10px;
+  }
+  .hero-canvas-box canvas{display:block; border-radius:6px;}
+  .hero-canvas-caption{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; color:var(--ink-soft); text-align:center; margin-top:6px;}
+
+  .facts{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:1px; max-width:420px; background:var(--line);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-block:0 40px;
+  }
+  .fact{background:var(--surface); padding:14px 12px;}
+  .fact-label{font-size:0.72rem; color:var(--ink-soft); font-family:"IBM Plex Mono",monospace; letter-spacing:0.03em;}
+  .fact-value{font-weight:600; margin-top:4px; font-size:0.95rem;}
+  @media (max-width:640px){ .facts{grid-template-columns:repeat(2,1fr);} }
+
+  section{padding-block:40px; border-top:1px solid var(--line);}
+  section.first{border-top:none;}
+  .section-head{margin-bottom:22px;}
+  .section-num{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-soft);}
+  .section-head h2{font-size:clamp(1.25rem, 1.1rem + 0.5vw, 1.55rem); margin-top:4px;}
+
+  .topic-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:680px){ .topic-grid{grid-template-columns:1fr;} }
+  .topic-card{
+    display:flex; flex-direction:column;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; border-top:4px solid var(--card-accent, var(--teal));
+    color:var(--ink); text-decoration:none;
+  }
+  a.topic-card:hover{border-color:var(--card-accent);}
+  a.topic-card:focus-visible, .pager a:focus-visible, .navbar a:focus-visible, summary:focus-visible, .copy-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .topic-card.walk{--card-accent:var(--teal); --tagbg:var(--teal-soft);}
+  .topic-card.exchange{--card-accent:var(--ember); --tagbg:var(--ember-soft);}
+  .topic-card-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .topic-tag{
+    font-family:"IBM Plex Mono",monospace; font-size:0.7rem; padding:3px 8px; border-radius:999px;
+    background:var(--tagbg); color:var(--card-accent); font-weight:600; white-space:nowrap;
+  }
+  .topic-card h3{font-size:1.05rem;}
+  .topic-card p{color:var(--ink-soft); font-size:0.92rem; margin-top:10px;}
+  .topic-cta{margin-top:auto; padding-top:16px; font-family:"IBM Plex Mono",monospace; font-size:0.8rem; font-weight:600; color:var(--card-accent);}
+  .topic-diagram{margin-top:14px;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+  .stack{display:flex; flex-direction:column; gap:14px;}
+  ul.plain, ol.plain{margin:0; padding-left:1.15em;}
+  ul.plain li, ol.plain li{margin-block:6px;}
+  ol.steps{margin:0; padding-left:1.3em;}
+  ol.steps li{margin-block:6px;}
+
+  .principle-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;}
+  @media (max-width:680px){ .principle-grid{grid-template-columns:1fr;} }
+  .principle{background:var(--surface-2); border-radius:var(--radius); padding:16px;}
+  .principle p{margin-top:8px; font-size:0.9rem; color:var(--ink-soft);}
+
+  .session{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .session-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:18px 22px; background:var(--surface-2); border-bottom:1px solid var(--line);
+  }
+  .session-head-left{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  .session-kicker{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-soft);}
+  .session-head h3{font-size:1.15rem;}
+  .session-duration{font-family:"IBM Plex Mono",monospace; font-size:0.78rem; font-weight:600; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 10px;}
+  .session-body{padding:22px;}
+  .session-goal{color:var(--ink-soft); font-size:0.93rem; max-width:62ch; margin-bottom:20px;}
+
+  table.schedule{width:100%; border-collapse:collapse; font-size:0.88rem;}
+  table.schedule th, table.schedule td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.schedule th{color:var(--ink-soft); font-weight:600; font-size:0.75rem; letter-spacing:0.04em;}
+  table.schedule td.time{font-family:"IBM Plex Mono",monospace; white-space:nowrap; color:var(--ink-soft); width:6.5em;}
+  table.nums td.num, table.nums th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace;}
+  .table-scroll{overflow-x:auto;}
+
+  .subhead{
+    font-family:"IBM Plex Mono",monospace; font-size:0.78rem; font-weight:600; color:var(--ink-soft);
+    letter-spacing:0.05em; margin:28px 0 10px;
+  }
+  .subhead:first-child{margin-top:0;}
+  .note{font-size:0.85rem; color:var(--ink-soft); margin-top:10px; max-width:66ch;}
+
+  .prompt-block{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:16px; margin-top:4px;}
+  .prompt-block pre{
+    margin:0; white-space:pre-wrap; word-break:break-word; font-family:"IBM Plex Mono",monospace;
+    font-size:0.82rem; line-height:1.65; color:var(--ink); padding-right:64px;
+  }
+  .copy-btn{
+    position:absolute; top:10px; right:10px; font-family:"IBM Plex Mono",monospace; font-size:0.7rem; font-weight:600;
+    background:var(--surface); color:var(--ink-soft); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer;
+  }
+  .copy-btn:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .copy-btn[data-state="done"]{color:var(--accent); border-color:var(--accent);}
+
+  .checklist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .checklist li{display:flex; align-items:flex-start; gap:10px; background:var(--surface-2); border-radius:8px; padding:10px 12px;}
+  .checklist input[type="checkbox"]{margin-top:4px; width:16px; height:16px; accent-color:var(--accent); flex:0 0 auto;}
+  .checklist label{font-size:0.9rem; flex:1;}
+  .chip{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; font-weight:600; padding:2px 7px; border-radius:5px; white-space:nowrap; margin-right:8px;}
+  .chip.hand{background:var(--teal-soft); color:var(--teal);}
+  .chip.ai{background:var(--ember-soft); color:var(--ember);}
+  .chip.rec{background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line);}
+  .principle .chip{margin-right:0;}
+
+  .viz-steps{background:var(--surface-2); border-radius:8px; padding:16px 16px 16px 34px; margin-top:6px;}
+
+  .extend-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px;}
+  @media (max-width:680px){ .extend-grid{grid-template-columns:1fr;} }
+  .extend-item{background:var(--surface-2); border-radius:8px; padding:13px 14px; font-size:0.9rem; border-left:3px solid var(--line);}
+  .extend-item b{display:block; font-size:0.88rem; margin-bottom:4px;}
+
+  details.refcode{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  details.refcode summary{
+    cursor:pointer; padding:16px 20px; font-weight:600; list-style:none; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; background:var(--surface-2);
+  }
+  details.refcode summary::-webkit-details-marker{display:none;}
+  details.refcode summary::after{content:"開く"; font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-soft); font-weight:500;}
+  details.refcode[open] summary::after{content:"閉じる";}
+  .refcode-body{padding:18px 20px 22px;}
+  .refcode-body pre{
+    margin:0; background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:16px; overflow-x:auto;
+    font-family:"IBM Plex Mono",monospace; font-size:0.78rem; line-height:1.6;
+  }
+
+  .callout{
+    background:var(--ember-soft); border:1px solid color-mix(in srgb, var(--ember) 35%, var(--line));
+    border-radius:var(--radius); padding:16px 18px; font-size:0.9rem; max-width:72ch;
+  }
+  .callout b{color:var(--ember);}
+  .callout.teal{background:var(--teal-soft); border-color:color-mix(in srgb, var(--teal) 35%, var(--line));}
+  .callout.teal b{color:var(--teal);}
+
+  .pager{display:grid; grid-template-columns:1fr 1fr; gap:14px; padding-block:36px 8px; border-top:1px solid var(--line);}
+  @media (max-width:560px){ .pager{grid-template-columns:1fr;} }
+  .pager a{
+    display:block; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; text-decoration:none; color:var(--ink);
+  }
+  .pager a:hover{border-color:var(--ink-soft);}
+  .pager .dir{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-soft);}
+  .pager .ttl{font-weight:600; margin-top:2px;}
+  .pager a.next{text-align:right;}
+  .pager a.only-next{grid-column:2;}
+  @media (max-width:560px){ .pager a.only-next{grid-column:1;} }
+
+  footer{padding-block:28px 60px; color:var(--ink-soft); font-size:0.82rem;}
+</style>
+</head>
+<body class="page-exchange">
+<div class="navbar"><div class="navbar-inner">
+<a class="navbar-brand" href="index.html">格子物理ラボ</a>
+<nav class="navbar-links">
+<a class="nav-home" href="index.html">ホーム</a>
+<a class="nav-walk" href="walk.html">テーマA 格子ランダムウォーク</a>
+<a class="nav-exchange" href="exchange.html" aria-current="page">テーマB 隣接交換モデル</a>
+<a class="nav-home" href="index.html#session3">3コマ目</a>
+<a class="nav-home" href="index.html#report">レポート</a>
+</nav></div></div>
+<div class="wrap">
+
+  <div class="hero" id="overview">
+    <div class="hero-text">
+      <div class="eyebrow">テーマB &middot; 2コマ目 &middot; 90分</div>
+      <h1>隣接交換モデル</h1>
+      <p class="lede">隣り合うマスがエネルギーを分け合うだけで、熱の広がりと統計法則が同時に現れる。</p>
+    </div>
+    <div class="hero-canvas-box">
+      <canvas id="demoCanvas" data-demo="exchange" width="220" height="220"></canvas>
+      <div class="hero-canvas-caption">中心に集めたエネルギーが広がる（実演）</div>
+    </div>
+  </div>
+
+  <section class="first">
+    <div class="section-head"><div class="section-num">モデル</div><h2>何をシミュレーションするか</h2></div>
+    <div class="stack">
+      <p class="prose">21&times;21マスの各マスが、「エネルギー」という整数の値を持つ。最初は中心のマスにだけ10000を集め、ほかのマスは0にする。毎ステップ、マスを1つ選び、上下左右のどれかの隣と組にして、2マスのエネルギーの合計を、ランダムに分け直す。たとえば合計が10なら、8と2に分かれることも、3と7に分かれることも、10と0に分かれることもある。合計は変わらないので、全体のエネルギーは保存される。</p>
+      <p class="prose">これを何十万回も繰り返すと、2つのことが同時に起こる。1つは空間的な変化で、中心に集まっていたエネルギーが隣へ隣へと伝わり、やがて全体に広がる。これが熱伝導にあたる。もう1つは値の分布の変化で、十分に時間が経つと、各マスのエネルギーの値を集めたヒストグラムが、右肩下がりの指数関数の形に落ち着く。これがボルツマン分布である。全体の平均は10000÷441 &asymp; 22.7で、度数は大きい値ほど指数的に減る。</p>
+      <svg style="max-width:320px;" width="100%" height="90" viewBox="0 0 220 90" role="img" aria-label="隣り合う2マスがエネルギーを分け合う様子">
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="20" y1="15" x2="20" y2="75"/><line x1="50" y1="15" x2="50" y2="75"/>
+            <line x1="80" y1="15" x2="80" y2="75"/><line x1="110" y1="15" x2="110" y2="75"/>
+            <line x1="140" y1="15" x2="140" y2="75"/><line x1="170" y1="15" x2="170" y2="75"/>
+            <line x1="10" y1="15" x2="180" y2="15"/><line x1="10" y1="45" x2="180" y2="45"/><line x1="10" y1="75" x2="180" y2="75"/>
+          </g>
+          <rect x="80" y="15" width="30" height="30" fill="var(--ember)" opacity="0.85"/>
+          <rect x="110" y="15" width="30" height="30" fill="var(--ember)" opacity="0.25"/>
+          <text x="95" y="35" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="#fff">8</text>
+          <text x="125" y="35" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--ink)">2</text>
+          <text x="110" y="62" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--ink-soft)">合計10を分け直す</text>
+        </svg>
+    </div>
+    <div class="subhead">規模と観察するもの</div>
+    <p class="prose">格子は21&times;21マスで、中心のマスにだけ10000のエネルギーを置いて始め、100万回繰り返す。2000・20000・200000・1000000回目の時点で、マスごとのエネルギーを取り出し、ヒートマップにする。最後には、どんな大きさのエネルギーを持つマスがいくつあるかを数えて、棒グラフ（ヒストグラム）にする。エネルギーの総和が10000のままかどうかも確かめる。</p>
+  </section>
+
+  <section>
+    <div class="section-head"><div class="section-num">進行</div><h2>進め方</h2></div>
+    <p class="session-goal">1コマ目のコードをAIへの追加指示で書き換え、「粒子が動く」モデルから「エネルギーを分け合う」モデルへ発展させる。空間分布のヒートマップと、値の分布のヒストグラムの両方を作る。</p>
+    <ul class="plain">
+      <li><b>導入:</b> 前回の振り返り。新しいルール（分け直し）を、具体例で説明する。たとえば隣り合う2マスが8と2なら、合計の10を分け直す。このとき、0から10までの整数を1つ選んで分け直す（3を選べば、3と7になる）。結果がどんな形になるか予想を書き留める。</li>
+      <li><b>コードの書き換え:</b> 1コマ目のコードをAIに渡し、上の説明をもとに、指示を自分たちの言葉で書いて書き換えさせる。書き換わったコードも、手元のPCでコンパイルして実行する。説明をそのまま貼り付けるのではなく、AIが迷いそうな点を考えて補う。エネルギーの総和が10000のままか、出力で確認する。</li>
+      <li><b>ヒートマップ:</b> 4つの時点の空間分布をヒートマップにして、エネルギーが広がる様子を確認する。</li>
+      <li><b>ヒストグラム:</b> 各マスのエネルギー値をヒストグラムにして、指数分布に近づいているかを確認する。</li>
+      <li><b>チャレンジ:</b> 下の項目に取り組む。3コマ目の発展メニューを予告する。</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="section-head"><div class="section-num">可視化</div><h2>Excelでの可視化手順</h2></div>
+    <div class="subhead" style="margin-top:0;">ヒストグラムとは</div>
+    <p class="prose" style="margin-bottom:14px;">各マスのエネルギーの値を、10ごとなどの区間に分け、区間ごとにマスがいくつあるかを数えて棒グラフにしたもの。どんな大きさの値が多く、どんな大きさの値が少ないかが、形として見える。</p>
+    <div style="margin-bottom:24px;"><svg viewBox="0 0 480 224" width="100%" style="max-width:480px; display:block;" role="img" aria-label="4×4マスのエネルギーの値を10ごとの階級に分け、階級ごとのマスの数を棒グラフにする例">
+<text x="90" y="20" text-anchor="middle" font-size="12" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">各マスのエネルギー</text>
+<rect x="10" y="30" width="40" height="40" fill="var(--ember)" fill-opacity="0.12" stroke="var(--line)" stroke-width="1"/>
+<text x="30" y="55" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">2</text>
+<rect x="50" y="30" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="70" y="55" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">14</text>
+<rect x="90" y="30" width="40" height="40" fill="var(--ember)" fill-opacity="0.12" stroke="var(--line)" stroke-width="1"/>
+<text x="110" y="55" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">7</text>
+<rect x="130" y="30" width="40" height="40" fill="var(--ember)" fill-opacity="0.7" stroke="var(--line)" stroke-width="1"/>
+<text x="150" y="55" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">31</text>
+<rect x="10" y="70" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="30" y="95" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">12</text>
+<rect x="50" y="70" width="40" height="40" fill="var(--ember)" fill-opacity="0.5" stroke="var(--line)" stroke-width="1"/>
+<text x="70" y="95" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">22</text>
+<rect x="90" y="70" width="40" height="40" fill="var(--ember)" fill-opacity="0.12" stroke="var(--line)" stroke-width="1"/>
+<text x="110" y="95" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">5</text>
+<rect x="130" y="70" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="150" y="95" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">18</text>
+<rect x="10" y="110" width="40" height="40" fill="var(--ember)" fill-opacity="0.5" stroke="var(--line)" stroke-width="1"/>
+<text x="30" y="135" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">26</text>
+<rect x="50" y="110" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="70" y="135" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">11</text>
+<rect x="90" y="110" width="40" height="40" fill="var(--ember)" fill-opacity="0.12" stroke="var(--line)" stroke-width="1"/>
+<text x="110" y="135" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">3</text>
+<rect x="130" y="110" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="150" y="135" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">16</text>
+<rect x="10" y="150" width="40" height="40" fill="var(--ember)" fill-opacity="0.7" stroke="var(--line)" stroke-width="1"/>
+<text x="30" y="175" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">35</text>
+<rect x="50" y="150" width="40" height="40" fill="var(--ember)" fill-opacity="0.12" stroke="var(--line)" stroke-width="1"/>
+<text x="70" y="175" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">9</text>
+<rect x="90" y="150" width="40" height="40" fill="var(--ember)" fill-opacity="0.5" stroke="var(--line)" stroke-width="1"/>
+<text x="110" y="175" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">24</text>
+<rect x="130" y="150" width="40" height="40" fill="var(--ember)" fill-opacity="0.32" stroke="var(--line)" stroke-width="1"/>
+<text x="150" y="175" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">15</text>
+<text x="207" y="86" text-anchor="middle" font-size="11" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">10ごとに</text>
+<text x="207" y="100" text-anchor="middle" font-size="11" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">マスの数を</text>
+<text x="207" y="114" text-anchor="middle" font-size="11" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">数える</text>
+<path d="M180 128 L234 128" stroke="var(--ink-soft)" stroke-width="1.6" fill="none" marker-end="url(#arrowGrey)"/>
+<defs><marker id="arrowGrey" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--ink-soft)"/></marker></defs>
+<text x="260" y="34" font-size="12" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">マスの数</text>
+<line x1="260" y1="180" x2="470" y2="180" stroke="var(--ink-soft)" stroke-width="1.2"/>
+<rect x="268" y="80" width="40" height="100" fill="var(--ember)" fill-opacity="0.12"/>
+<text x="288" y="74" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono, monospace">5</text>
+<text x="288" y="197" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono, monospace">0〜9</text>
+<rect x="318" y="60" width="40" height="120" fill="var(--ember)" fill-opacity="0.32"/>
+<text x="338" y="54" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono, monospace">6</text>
+<text x="338" y="197" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono, monospace">10〜19</text>
+<rect x="368" y="120" width="40" height="60" fill="var(--ember)" fill-opacity="0.5"/>
+<text x="388" y="114" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono, monospace">3</text>
+<text x="388" y="197" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono, monospace">20〜29</text>
+<rect x="418" y="140" width="40" height="40" fill="var(--ember)" fill-opacity="0.7"/>
+<text x="438" y="134" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono, monospace">2</text>
+<text x="438" y="197" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono, monospace">30〜39</text>
+<text x="365" y="216" text-anchor="middle" font-size="12" fill="var(--ink-soft)" font-family="IBM Plex Sans, sans-serif">エネルギーの大きさ</text>
+</svg></div>
+    <p class="note" style="margin-top:-12px; margin-bottom:24px;">例: 4&times;4マスの場合。色は、同じ区間のマスと棒をそろえてある。</p>
+    <div class="subhead">手順</div>
+    <ol class="steps viz-steps">
+      <li>4つの空間分布のCSVを開き、1コマ目と同じ手順でカラースケールのヒートマップにする。色の最大値は4つで同じ値（例: 200）に固定する。</li>
+      <li>energy_values.csvを開き、エネルギー値を10ごとの階級（0〜9、10〜19、…）に分けて度数を数える。COUNTIFS関数か、ヒストグラム機能を使う。</li>
+      <li>横軸を階級、縦軸を度数にした棒グラフを作る。</li>
+      <li>理論値と重ねる。階級幅が10のとき、度数の理論値は 441 &times; (1 &minus; e<sup>&minus;10/22.7</sup>) &times; e<sup>&minus;E/22.7</sup> &asymp; 157 &times; e<sup>&minus;E/22.7</sup>（Eは階級の下端の値）。この式のセルを作って折れ線で重ねるか、AIにデータを出力させる。</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="section-head"><div class="section-num">課題</div><h2>取り組むことと記録</h2></div>
+    <p class="note" style="margin-top:0; margin-bottom:12px;">次の項目に取り組み、記録をレポートに使う。</p>
+    <ul class="plain">
+      <li><span class="chip hand">手作業</span>初期エネルギーを5000や20000に変え、平均値と分布の形がどう変わるかを見る。</li>
+      <li><span class="chip hand">手作業</span>エネルギーを集める場所を中心から角に変えて、広がり方を比べる。</li>
+      <li><span class="chip hand">手作業</span>格子を11&times;11に小さくして、分布が落ち着くまでの回数がどう変わるかを調べる。</li>
+      <li><span class="chip ai">AI指示</span>理論の指数分布の値も、ヒストグラムと同じ階級でCSVに出力してもらう。</li>
+      <li><span class="chip ai">AI指示</span>左端の列を高いエネルギーに、右端の列を0に固定し続けて、エネルギーが左から右へ流れる定常状態を見られるようにしてもらう。</li>
+      <li><span class="chip rec">記録</span>実行前に書き留めた予想と、実際の結果の違い。</li>
+      <li><span class="chip rec">記録</span>4つの時点のヒートマップと、ヒストグラムに理論値を重ねたグラフ。</li>
+      <li><span class="chip rec">記録</span>エネルギーの総和が10000のままであることの確認結果。</li>
+      <li><span class="chip rec">記録</span>1コマ目のコードを書き換えるときにAIへ出した指示と、うまくいかなかった点、その対処。</li>
+      <li><span class="chip rec">記録</span>自分たちの手で直した部分と、AIに追加で指示して直した部分の区別。</li>
+    </ul>
+  </section>
+
+  <div class="pager">
+    <a href="walk.html"><div class="dir">戻る</div><div class="ttl">テーマA 格子ランダムウォーク</div></a>
+    <a class="next" href="index.html#session3"><div class="dir">次へ</div><div class="ttl">3コマ目 自由発展とレポート</div></a>
+  </div>
+  <footer>格子物理ラボ &middot; テーマB 隣接交換モデル<br>&copy; 2026 松岡亮</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  document.querySelectorAll('.checklist input[type="checkbox"]').forEach(function(box){
+    var key = "lattice-lab:" + box.id;
+    try { if (localStorage.getItem(key) === "1") box.checked = true; } catch (e) {}
+    box.addEventListener("change", function(){
+      try { localStorage.setItem(key, box.checked ? "1" : "0"); } catch (e) {}
+    });
+  });
+
+  function selectText(el){
+    try {
+      var range = document.createRange(); range.selectNodeContents(el);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    } catch (e) {}
+  }
+  document.querySelectorAll(".copy-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var el = document.getElementById(btn.getAttribute("data-copy-target"));
+      if (!el) return;
+      function fallback(){
+        selectText(el);
+        btn.textContent = "選択済み(Ctrl+C)";
+        setTimeout(function(){ btn.textContent = "コピー"; }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.textContent).then(function(){
+          btn.textContent = "コピー済み"; btn.dataset.state = "done";
+          setTimeout(function(){ btn.textContent = "コピー"; btn.dataset.state = ""; }, 1600);
+        }).catch(fallback);
+      } else { fallback(); }
+    });
+  });
+
+  var canvas = document.getElementById("demoCanvas");
+  if (!canvas || !canvas.getContext) return;
+  var kind = canvas.getAttribute("data-demo");
+  var ctx = canvas.getContext("2d");
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var css = 220;
+  canvas.width = css * dpr; canvas.height = css * dpr;
+  canvas.style.width = css + "px"; canvas.style.height = css + "px";
+  ctx.scale(dpr, dpr);
+  var G = 15, cell = css / G, c0 = Math.floor(G / 2);
+
+  function token(name, fallback){
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  function rgb(hex){
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function(c){ return c + c; }).join("");
+    var n = parseInt(hex, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function dirStep(i, j){
+    var d = Math.floor(Math.random() * 4);
+    if (d === 0 && i > 0) return [i - 1, j];
+    if (d === 1 && i < G - 1) return [i + 1, j];
+    if (d === 2 && j > 0) return [i, j - 1];
+    if (d === 3 && j < G - 1) return [i, j + 1];
+    return null;
+  }
+
+  var walk = { visits: null, dots: null, t: 0 };
+  var ex = { e: null, t: 0, total: 2250 };
+
+  function reset(){
+    var i;
+    if (kind === "walk") {
+      walk.visits = []; walk.dots = []; walk.t = 0;
+      for (i = 0; i < G; i++) walk.visits.push(new Array(G).fill(0));
+      for (i = 0; i < 7; i++) { walk.dots.push({ y: c0, x: c0 }); walk.visits[c0][c0]++; }
+    } else {
+      ex.e = []; ex.t = 0;
+      for (i = 0; i < G; i++) ex.e.push(new Array(G).fill(0));
+      ex.e[c0][c0] = ex.total;
+    }
+  }
+  function step(){
+    var k;
+    if (kind === "walk") {
+      walk.dots.forEach(function(d){
+        var n = dirStep(d.y, d.x);
+        if (n) { d.y = n[0]; d.x = n[1]; }
+        walk.visits[d.y][d.x]++;
+      });
+      walk.t++;
+      if (walk.t > 260) reset();
+    } else {
+      for (k = 0; k < 300; k++) {
+        var i = Math.floor(Math.random() * G), j = Math.floor(Math.random() * G);
+        var n = dirStep(i, j);
+        if (!n) continue;
+        var tot = ex.e[i][j] + ex.e[n[0]][n[1]];
+        var a = Math.floor(Math.random() * (tot + 1));
+        ex.e[i][j] = a; ex.e[n[0]][n[1]] = tot - a;
+      }
+      ex.t++;
+      if (ex.t > 170) reset();
+    }
+  }
+  function draw(){
+    ctx.fillStyle = token("--surface", "#FFFFFF");
+    ctx.fillRect(0, 0, css, css);
+    var i, j, a;
+    if (kind === "walk") {
+      var c = rgb(token("--teal", "#0C7D74")), mx = 1;
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) if (walk.visits[i][j] > mx) mx = walk.visits[i][j];
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) {
+        var v = walk.visits[i][j];
+        if (v > 0) {
+          a = Math.min(0.85, v / mx) * 0.75;
+          ctx.fillStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+          ctx.fillRect(j * cell, i * cell, cell - 1, cell - 1);
+        }
+      }
+      ctx.fillStyle = "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",0.95)";
+      walk.dots.forEach(function(d){
+        ctx.beginPath(); ctx.arc(d.x * cell + cell / 2, d.y * cell + cell / 2, cell * 0.28, 0, Math.PI * 2); ctx.fill();
+      });
+    } else {
+      var m = rgb(token("--ember", "#C94510")), mean = ex.total / (G * G);
+      for (i = 0; i < G; i++) for (j = 0; j < G; j++) {
+        a = Math.min(1, ex.e[i][j] / (mean * 4)) * 0.85;
+        if (a > 0.01) {
+          ctx.fillStyle = "rgba(" + m[0] + "," + m[1] + "," + m[2] + "," + a + ")";
+          ctx.fillRect(j * cell, i * cell, cell - 1, cell - 1);
+        }
+      }
+    }
+  }
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  reset();
+  if (reduce) {
+    var s, n = (kind === "walk") ? 180 : 40;
+    for (s = 0; s < n; s++) step();
+    draw();
+  } else {
+    draw();
+    setInterval(function(){ step(); draw(); }, 140);
+  }
+})();
+</script>
+</body>
+</html>
